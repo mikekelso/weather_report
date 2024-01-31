@@ -1,1 +1,23 @@
+name: Daily Weather Report
 
+on:
+  schedule:
+    - cron: '0 14 * * *'  # Run every day at 7 am UTC
+
+jobs:
+  build:
+    runs-on: rust-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker Image
+        run: docker build --tag weather_docker_image --file dockerfile 
+        - name: Build the Docker container
+        run: docker compose --file compose.yml up --detach
+      - name: Run make inside the container
+        run: docker exec -t weather-container cargo build
+      - name: Run run inside the container
+        run: docker exec -t weather-container cargo run
+          
+          
+   
