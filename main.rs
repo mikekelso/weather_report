@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use serde::Serialize;
 use anyhow :: Result;
+use std::fs::File;
+use std::io::Write;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -109,50 +111,50 @@ pub struct DailyWeather {
 }
 
 
-fn print_current(current: &Current) {
-    println!("Current Data:\n");
-    println!("Temperature: {}°F   Feels Like: {}°F", current.temp, current.feels_like);
-    println!("Cloudiness: {}%", current.clouds);
-    println!("Wind Speed: {} mph", current.wind_speed);
+fn print_current(current: &Current,file: &mut File )  {
+    writeln!(file, "Current Data:\n");
+    writeln!(file, "Temperature: {}°F   Feels Like: {}°F", current.temp, current.feels_like);
+    writeln!(file, "Cloudiness: {}%", current.clouds);
+    writeln!(file, "Wind Speed: {} mph", current.wind_speed);
    
 
     
     
     if let Some(weather) = current.weather.first() {
-        println!("\nCurrent Overview: {} - {}\n", weather.main, weather.description );
+        writeln!(file, "\nCurrent Overview: {} - {}\n", weather.main, weather.description );
     } else {
-        println!("  No weather information available.");
+        writeln!(file, "  No weather information available.");
     }
 
 }
 
 
-fn print_daily(daily: &Daily) {
-    println!("Today's Data:\n");
-    println!("Summary: {}\n", daily.summary);
+fn print_daily(daily: &Daily, file: &mut File)  {
+    writeln!(file, "Today's Data:\n");
+    writeln!(file, "Summary: {}\n", daily.summary);
     
     
 
     if let Some(rain) = daily.rain {
-        println!("Rain amount today: {} mm", rain);
+        writeln!(file, "Rain amount today: {} mm", rain);
     } 
 
     if let Some(snow) = daily.snow {
-        println!("Snow amount today: {} mm", snow);
+        writeln!(file, "Snow amount today: {} mm", snow);
     } 
-    println!("Probability of Precipitation: {}%", daily.pop);
-    println!("UV Index: {}", daily.uvi);
-    println!("Wind Speed: {} mph", daily.wind_speed);
-    println!("Cloudiness: {}%", daily.clouds);
+    writeln!(file, "Probability of Precipitation: {}%", daily.pop);
+    writeln!(file, "UV Index: {}", daily.uvi);
+    writeln!(file, "Wind Speed: {} mph", daily.wind_speed);
+    writeln!(file, "Cloudiness: {}%", daily.clouds);
    
 
-    println!("\nTemperature Data:\n");
+    writeln!(file, "\nTemperature Data:\n");
     
-    println!("Min Temperature: {}°F", daily.temp.min);
-    println!("Max Temperature: {}°F", daily.temp.max);
-    println!("Morning Temperature: {}°F   Feels Like: {}°F", daily.temp.morn, daily.feels_like.morn);
-    println!("Day Temperature: {}°F   Feels Like: {}°F", daily.temp.day, daily.feels_like.day);
-    println!("Evening Temperature: {}°F   Feels Like: {}°F", daily.temp.eve, daily.feels_like.eve);
+    writeln!(file, "Min Temperature: {}°F", daily.temp.min);
+    writeln!(file, "Max Temperature: {}°F", daily.temp.max);
+    writeln!(file, "Morning Temperature: {}°F   Feels Like: {}°F", daily.temp.morn, daily.feels_like.morn);
+    writeln!(file, "Day Temperature: {}°F   Feels Like: {}°F", daily.temp.day, daily.feels_like.day);
+    writeln!(file, "Evening Temperature: {}°F   Feels Like: {}°F", daily.temp.eve, daily.feels_like.eve);
     
 
     
@@ -167,10 +169,10 @@ fn print_daily(daily: &Daily) {
 
 
 async fn fetch_weather() -> Result<Root>  {
-    let url = format!("https://api.openweathermap.org/data/3.0/onecall?lat=39.84&lon=-105.04&exclude=hourly,minutely,alerts&appid={APIKEY}&units=imperial");
+    let url = format!("https://api.openweathermap.org/data/3.0/onecall?lat=39.84&lon=-105.04&exclude=hourly,minutely,alerts&appid=7ed862ccd7e9e2b5bb9808389cba219b&units=imperial");
     let response = reqwest::get(&url).await?;
     let body = response.text().await?;
-    //println!("{}", body);
+    //writeln!(file, "{}", body);
     let root: Root = serde_json::from_str(&body)?;
     
     
@@ -182,13 +184,15 @@ async fn fetch_weather() -> Result<Root>  {
 #[tokio::main]
 async fn main() -> Result<()>{
     
+    let mut file = File::create("output.txt")?;
     match fetch_weather().await {
         Ok(root) => {
-            print_current(&root.current);
-            print_daily(&root.daily[0]);
+            print_current(&root.current, &mut file);
+            print_daily(&root.daily[0], &mut file);
         }
-        Err(err) => eprintln!("error: {}", err),
-       
+        Err(err) => {
+            writeln!(file, "error: {}", err)?;
+        }
         
     }
     Ok(())
