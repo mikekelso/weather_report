@@ -169,7 +169,7 @@ fn print_daily(daily: &Daily, file: &mut File)  {
 
 
 async fn fetch_weather() -> Result<Root>  {
-    let url = format!("https://api.openweathermap.org/data/3.0/onecall?lat=39.84&lon=-105.04&exclude=hourly,minutely,alerts&appid=7ed862ccd7e9e2b5bb9808389cba219b&units=imperial");
+    let url = format!("https://api.openweathermap.org/data/3.0/onecall?lat=39.84&lon=-105.04&exclude=hourly,minutely,alerts&appid={APIKEY}&units=imperial");
     let response = reqwest::get(&url).await?;
     let body = response.text().await?;
     //writeln!(file, "{}", body);
